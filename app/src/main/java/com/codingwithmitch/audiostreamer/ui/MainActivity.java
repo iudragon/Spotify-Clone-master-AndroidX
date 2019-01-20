@@ -5,10 +5,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+
+import android.preference.PreferenceManager;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -68,6 +71,20 @@ public class MainActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Thread introThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                SharedPreferences getPrefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+                boolean isFirstStrt = getPrefs.getBoolean("introRequired", true);
+                if (isFirstStrt){
+                    startActivity(new Intent(MainActivity.this, MyIntro.class));
+                    SharedPreferences.Editor editor = getPrefs.edit();
+                    editor.putBoolean("introRequired", false);
+                    editor.apply();
+                }
+            }
+        });
+        introThread.start();
         mProgressBar = findViewById(R.id.progress_bar);
 
         mMyApplication = MyApplication.getInstance();
@@ -440,21 +457,3 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

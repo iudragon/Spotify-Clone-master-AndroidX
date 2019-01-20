@@ -40,5 +40,6 @@ dependencies {
 
     // Firestore
     implementation 'com.google.firebase:firebase-firestore:17.1.2'
+    implementation 'com.github.paolorotolo:appintro:v5.1.0'
 }
 apply plugin: 'com.google.gms.google-services'
