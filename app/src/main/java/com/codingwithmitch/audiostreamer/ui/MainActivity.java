@@ -7,15 +7,19 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
+import android.net.ConnectivityManager;
 import android.preference.PreferenceManager;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+
 import androidx.appcompat.app.AppCompatActivity;
+
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -48,8 +52,7 @@ import static com.codingwithmitch.audiostreamer.util.Constants.SEEK_BAR_PROGRESS
 
 public class MainActivity extends AppCompatActivity implements
         IMainActivity,
-        MediaBrowserHelperCallback
-{
+        MediaBrowserHelperCallback {
 
     private static final String TAG = "MainActivity";
 
@@ -66,17 +69,24 @@ public class MainActivity extends AppCompatActivity implements
     private boolean mOnAppOpen;
     private boolean mWasConfigurationChange = false;
 
+    /* CHECK NETWORK STATE */
+    private BroadcastReceiver MyReceiver = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        /* CHECK NETWORK STATE */
+        MyReceiver = new MyReceiver();
+
         Thread introThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 SharedPreferences getPrefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
                 boolean isFirstStrt = getPrefs.getBoolean("introRequired", true);
-                if (isFirstStrt){
+                if (isFirstStrt) {
                     startActivity(new Intent(MainActivity.this, MyIntro.class));
                     SharedPreferences.Editor editor = getPrefs.edit();
                     editor.putBoolean("introRequired", false);
@@ -93,25 +103,25 @@ public class MainActivity extends AppCompatActivity implements
         mMediaBrowserHelper = new MediaBrowserHelper(this, MediaService.class);
         mMediaBrowserHelper.setMediaBrowserHelperCallback(this);
 
-        if(savedInstanceState == null){
+        if (savedInstanceState == null) {
             loadFragment(HomeFragment.newInstance(), true);
         }
     }
 
-    private class UpdateUIBroadcastReceiver extends BroadcastReceiver{
+    private class UpdateUIBroadcastReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
             String newMediaId = intent.getStringExtra(getString(R.string.broadcast_new_media_id));
             Log.d(TAG, "onReceive: CALLED: " + newMediaId);
-            if(getPlaylistFragment() != null){
+            if (getPlaylistFragment() != null) {
                 Log.d(TAG, "onReceive: " + mMyApplication.getMediaItem(newMediaId).getDescription().getMediaId());
                 getPlaylistFragment().updateUI(mMyApplication.getMediaItem(newMediaId));
             }
         }
     }
 
-    private void initUpdateUIBroadcastReceiver(){
+    private void initUpdateUIBroadcastReceiver() {
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(getString(R.string.broadcast_update_ui));
         mUpdateUIBroadcastReceiver = new UpdateUIBroadcastReceiver();
@@ -133,12 +143,14 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onPause() {
         super.onPause();
-        if(mSeekbarBroadcastReceiver != null){
+        if (mSeekbarBroadcastReceiver != null) {
             unregisterReceiver(mSeekbarBroadcastReceiver);
         }
-        if(mUpdateUIBroadcastReceiver != null){
+        if (mUpdateUIBroadcastReceiver != null) {
             unregisterReceiver(mUpdateUIBroadcastReceiver);
         }
+        /* CHECK NETWORK STATE */
+        unregisterReceiver(MyReceiver);
     }
 
     private class SeekBarBroadcastReceiver extends BroadcastReceiver {
@@ -147,14 +159,14 @@ public class MainActivity extends AppCompatActivity implements
         public void onReceive(Context context, Intent intent) {
             long seekProgress = intent.getLongExtra(SEEK_BAR_PROGRESS, 0);
             long seekMax = intent.getLongExtra(SEEK_BAR_MAX, 0);
-            if(!getMediaControllerFragment().getMediaSeekBar().isTracking()){
-                getMediaControllerFragment().getMediaSeekBar().setProgress((int)seekProgress);
-                getMediaControllerFragment().getMediaSeekBar().setMax((int)seekMax);
+            if (!getMediaControllerFragment().getMediaSeekBar().isTracking()) {
+                getMediaControllerFragment().getMediaSeekBar().setProgress((int) seekProgress);
+                getMediaControllerFragment().getMediaSeekBar().setMax((int) seekMax);
             }
         }
     }
 
-    private void initSeekBarBroadcastReceiver(){
+    private void initSeekBarBroadcastReceiver() {
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(getString(R.string.broadcast_seekbar_update));
         mSeekbarBroadcastReceiver = new SeekBarBroadcastReceiver();
@@ -165,7 +177,7 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onMetadataChanged(MediaMetadataCompat metadata) {
         Log.d(TAG, "onMetadataChanged: called");
-        if(metadata == null){
+        if (metadata == null) {
             return;
         }
 
@@ -180,24 +192,24 @@ public class MainActivity extends AppCompatActivity implements
                 state.getState() == PlaybackStateCompat.STATE_PLAYING;
 
         // update UI
-        if(getMediaControllerFragment() != null){
+        if (getMediaControllerFragment() != null) {
             getMediaControllerFragment().setIsPlaying(mIsPlaying);
         }
     }
 
-    private PlaylistFragment getPlaylistFragment(){
-        PlaylistFragment playlistFragment = (PlaylistFragment)getSupportFragmentManager()
+    private PlaylistFragment getPlaylistFragment() {
+        PlaylistFragment playlistFragment = (PlaylistFragment) getSupportFragmentManager()
                 .findFragmentByTag(getString(R.string.fragment_playlist));
-        if(playlistFragment != null){
+        if (playlistFragment != null) {
             return playlistFragment;
         }
         return null;
     }
 
-    private MediaControllerFragment getMediaControllerFragment(){
-        MediaControllerFragment mediaControllerFragment = (MediaControllerFragment)getSupportFragmentManager()
+    private MediaControllerFragment getMediaControllerFragment() {
+        MediaControllerFragment mediaControllerFragment = (MediaControllerFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.bottom_media_controller);
-        if(mediaControllerFragment != null){
+        if (mediaControllerFragment != null) {
             return mediaControllerFragment;
         }
         return null;
@@ -205,25 +217,23 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onMediaSelected(String playlistId, MediaMetadataCompat mediaItem, int queuePosition) {
-        if(mediaItem != null){
+        if (mediaItem != null) {
             Log.d(TAG, "onMediaSelected: CALLED: " + mediaItem.getDescription().getMediaId());
 
             String currentPlaylistId = getMyPreferenceManager().getPlaylistId();
 
             Bundle bundle = new Bundle();
             bundle.putInt(MEDIA_QUEUE_POSITION, queuePosition);
-            if(playlistId.equals(currentPlaylistId)){
+            if (playlistId.equals(currentPlaylistId)) {
                 mMediaBrowserHelper.getTransportControls().playFromMediaId(mediaItem.getDescription().getMediaId(), bundle);
-            }
-            else{
+            } else {
                 bundle.putBoolean(QUEUE_NEW_PLAYLIST, true); // let the player know this is a new playlist
                 mMediaBrowserHelper.subscribeToNewPlaylist(currentPlaylistId, playlistId);
                 mMediaBrowserHelper.getTransportControls().playFromMediaId(mediaItem.getDescription().getMediaId(), bundle);
             }
 
             mOnAppOpen = true;
-        }
-        else{
+        } else {
             Toast.makeText(this, "select something to play", Toast.LENGTH_SHORT).show();
         }
     }
@@ -241,23 +251,20 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void playPause() {
-        if(mOnAppOpen){
+        if (mOnAppOpen) {
             if (mIsPlaying) {
                 mMediaBrowserHelper.getTransportControls().pause();
-            }
-            else {
+            } else {
                 mMediaBrowserHelper.getTransportControls().play();
             }
-        }
-        else{
-            if(!getMyPreferenceManager().getPlaylistId().equals("")){
+        } else {
+            if (!getMyPreferenceManager().getPlaylistId().equals("")) {
                 onMediaSelected(
                         getMyPreferenceManager().getPlaylistId(),
                         mMyApplication.getMediaItem(getMyPreferenceManager().getLastPlayedMedia()),
                         getMyPreferenceManager().getQueuePosition()
                 );
-            }
-            else{
+            } else {
                 Toast.makeText(this, "select something to play", Toast.LENGTH_SHORT).show();
             }
         }
@@ -274,12 +281,13 @@ public class MainActivity extends AppCompatActivity implements
     public void onStart() {
         super.onStart();
 
-        if(!getMyPreferenceManager().getPlaylistId().equals("")){
+        if (!getMyPreferenceManager().getPlaylistId().equals("")) {
             prepareLastPlayedMedia();
-        }
-        else{
+        } else {
             mMediaBrowserHelper.onStart(mWasConfigurationChange);
         }
+        /* CHECK NETWORK STATE */
+        broadcastIntent();
     }
 
     @Override
@@ -293,12 +301,12 @@ public class MainActivity extends AppCompatActivity implements
     /**
      * In a production app you'd want to get this data from a cache.
      */
-    private void prepareLastPlayedMedia(){
+    private void prepareLastPlayedMedia() {
         showPrgressBar();
 
         FirebaseFirestore firestore = FirebaseFirestore.getInstance();
 
-        Query query  = firestore
+        Query query = firestore
                 .collection(getString(R.string.collection_audio))
                 .document(getString(R.string.document_categories))
                 .collection(getMyPreferenceManager().getLastCategory())
@@ -314,7 +322,7 @@ public class MainActivity extends AppCompatActivity implements
                     for (QueryDocumentSnapshot document : task.getResult()) {
                         MediaMetadataCompat mediaItem = addToMediaList(document);
                         mediaItems.add(mediaItem);
-                        if(mediaItem.getDescription().getMediaId().equals(getMyPreferenceManager().getLastPlayedMedia())){
+                        if (mediaItem.getDescription().getMediaId().equals(getMyPreferenceManager().getLastPlayedMedia())) {
                             getMediaControllerFragment().setMediaTitle(mediaItem);
                         }
                     }
@@ -326,7 +334,7 @@ public class MainActivity extends AppCompatActivity implements
         });
     }
 
-    private void onFinishedGettingPreviousSessionData(List<MediaMetadataCompat> mediaItems){
+    private void onFinishedGettingPreviousSessionData(List<MediaMetadataCompat> mediaItems) {
         mMyApplication.setMediaItems(mediaItems);
         mMediaBrowserHelper.onStart(mWasConfigurationChange);
         hideProgressBar();
@@ -334,9 +342,10 @@ public class MainActivity extends AppCompatActivity implements
 
     /**
      * Translate the Firestore data into something the MediaBrowserService can deal with (MediaMetaDataCompat objects)
+     *
      * @param document
      */
-    private MediaMetadataCompat addToMediaList(QueryDocumentSnapshot document){
+    private MediaMetadataCompat addToMediaList(QueryDocumentSnapshot document) {
 
         MediaMetadataCompat media = new MediaMetadataCompat.Builder()
                 .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, document.getString(getString(R.string.field_media_id)))
@@ -351,23 +360,21 @@ public class MainActivity extends AppCompatActivity implements
         return media;
     }
 
-    private void loadFragment(Fragment fragment, boolean lateralMovement){
+    private void loadFragment(Fragment fragment, boolean lateralMovement) {
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
 
-        if(lateralMovement){
+        if (lateralMovement) {
             transaction.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left);
         }
 
         String tag = "";
-        if(fragment instanceof HomeFragment){
+        if (fragment instanceof HomeFragment) {
             tag = getString(R.string.fragment_home);
-        }
-        else if(fragment instanceof CategoryFragment){
+        } else if (fragment instanceof CategoryFragment) {
             tag = getString(R.string.fragment_category);
             transaction.addToBackStack(tag);
-        }
-        else if(fragment instanceof PlaylistFragment){
+        } else if (fragment instanceof PlaylistFragment) {
             tag = getString(R.string.fragment_playlist);
             transaction.addToBackStack(tag);
         }
@@ -381,20 +388,20 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
-    private void showFragment(Fragment fragment, boolean backswardsMovement){
+    private void showFragment(Fragment fragment, boolean backswardsMovement) {
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
 
-        if(backswardsMovement){
+        if (backswardsMovement) {
             transaction.setCustomAnimations(R.anim.enter_from_left, R.anim.exit_to_right);
         }
 
         transaction.show(fragment);
         transaction.commit();
 
-        for(Fragment f: MainActivityFragmentManager.getInstance().getFragments()){
-            if(f != null ){
-                if(!f.getTag().equals(fragment.getTag())){
+        for (Fragment f : MainActivityFragmentManager.getInstance().getFragments()) {
+            if (f != null) {
+                if (!f.getTag().equals(fragment.getTag())) {
                     FragmentTransaction t = getSupportFragmentManager().beginTransaction();
                     t.hide(f);
                     t.commit();
@@ -411,7 +418,7 @@ public class MainActivity extends AppCompatActivity implements
     public void onBackPressed() {
         ArrayList<Fragment> fragments = new ArrayList<>(MainActivityFragmentManager.getInstance().getFragments());
 
-        if(fragments.size() > 1){
+        if (fragments.size() > 1) {
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             transaction.remove(fragments.get(fragments.size() - 1));
             transaction.commit();
@@ -455,5 +462,14 @@ public class MainActivity extends AppCompatActivity implements
     public void setActionBarTitle(String title) {
         getSupportActionBar().setTitle(title);
     }
+
+
+
+    /* CHECK NETWORK STATE */
+
+    public void broadcastIntent() {
+        registerReceiver(MyReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+    }
+
 
 }

@@ -3,6 +3,8 @@
     package="com.codingwithmitch.audiostreamer">
 
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
 
     <application
         android:name=".MyApplication"
@@ -33,6 +35,12 @@
         <receiver android:name="androidx.media.session.MediaButtonReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON"/>
+            </intent-filter>
+        </receiver>
+        <receiver android:name = ".ui.MyReceiver">
+            <intent-filter>
+                <action android:name = "android.net.conn.CONNECTIVITY_CHANGE" />
+                <action android:name = "android.net.wifi.WIFI_STATE_CHANGED" />
             </intent-filter>
         </receiver>
     </application>
