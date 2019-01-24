@@ -8,6 +8,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -40,6 +42,11 @@ public class CategoryFragment extends Fragment implements CategoryRecyclerAdapte
     private ArrayList<Artist> mArtists = new ArrayList<>();
     private IMainActivity mIMainActivity;
     private String mSelectedCategory;
+
+    /* SWIPE REFRESH LAYOUT */
+
+    private SwipeRefreshLayout mRefreshLayout;
+    private int refresh_count = 0;
 
     public static CategoryFragment newInstance(String category){
         CategoryFragment categoryFragment = new CategoryFragment();
@@ -76,6 +83,18 @@ public class CategoryFragment extends Fragment implements CategoryRecyclerAdapte
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         initRecyclerView(view);
         mIMainActivity.setActionBarTitle(mSelectedCategory);
+        /* SWIPE REFRESH LAYOUT */
+
+        mRefreshLayout = view.findViewById(R.id.swipe_refresh_layout);
+        mRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                mArtists.clear();
+                retrieveArtists();
+                mRefreshLayout.setRefreshing(false);
+
+            }
+        });
     }
 
     private void retrieveArtists(){

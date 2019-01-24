@@ -3,12 +3,17 @@ package com.codingwithmitch.audiostreamer.ui;
 
 import android.content.Context;
 import android.os.Bundle;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+
 import android.support.v4.media.MediaMetadataCompat;
+
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,8 +33,7 @@ import java.util.ArrayList;
 
 
 public class PlaylistFragment extends Fragment implements
-        PlaylistRecyclerAdapter.IMediaSelector
-{
+        PlaylistRecyclerAdapter.IMediaSelector {
 
     private static final String TAG = "PlaylistFragment";
 
@@ -45,7 +49,12 @@ public class PlaylistFragment extends Fragment implements
     private Artist mSelectArtist;
     private MediaMetadataCompat mSelectedMedia;
 
-    public static PlaylistFragment newInstance(String category, Artist artist){
+    /* SWIPE REFRESH LAYOUT */
+
+    private SwipeRefreshLayout mRefreshLayout;
+    private int refresh_count = 0;
+
+    public static PlaylistFragment newInstance(String category, Artist artist) {
         PlaylistFragment playlistFragment = new PlaylistFragment();
         Bundle args = new Bundle();
         args.putString("category", category);
@@ -56,7 +65,7 @@ public class PlaylistFragment extends Fragment implements
 
     @Override
     public void onHiddenChanged(boolean hidden) {
-        if(!hidden){
+        if (!hidden) {
             mIMainActivity.setActionBarTitle(mSelectArtist.getTitle());
         }
     }
@@ -64,7 +73,7 @@ public class PlaylistFragment extends Fragment implements
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(getArguments() != null){
+        if (getArguments() != null) {
             mSelectedCategory = getArguments().getString("category");
             mSelectArtist = getArguments().getParcelable("artist");
         }
@@ -82,22 +91,38 @@ public class PlaylistFragment extends Fragment implements
         initRecyclerView(view);
         mIMainActivity.setActionBarTitle(mSelectArtist.getTitle());
 
-        if(savedInstanceState != null){
+        if (savedInstanceState != null) {
             mAdapter.setSelectedIndex(savedInstanceState.getInt("selected_index"));
         }
+
+        /* SWIPE REFRESH LAYOUT */
+
+        mRefreshLayout = view.findViewById(R.id.swipe_refresh_layout);
+        mRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+
+                mMediaList.clear();
+
+                retrieveMedia();
+
+                mRefreshLayout.setRefreshing(false);
+
+            }
+        });
     }
 
-    private void getSelectedMediaItem(String mediaId){
-        for(MediaMetadataCompat mediaItem: mMediaList){
-            if(mediaItem.getDescription().getMediaId().equals(mediaId)){
+    private void getSelectedMediaItem(String mediaId) {
+        for (MediaMetadataCompat mediaItem : mMediaList) {
+            if (mediaItem.getDescription().getMediaId().equals(mediaId)) {
                 mSelectedMedia = mediaItem;
                 mAdapter.setSelectedIndex(mAdapter.getIndexOfItem(mSelectedMedia));
                 break;
             }
         }
     }
-	
-    private void retrieveMedia(){
+
+    private void retrieveMedia() {
         mIMainActivity.showPrgressBar();
 
         FirebaseFirestore firestore = FirebaseFirestore.getInstance();
@@ -113,12 +138,11 @@ public class PlaylistFragment extends Fragment implements
         query.get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                if(task.isSuccessful()){
-                    for(QueryDocumentSnapshot document: task.getResult()){
-                       addToMediaList(document);
+                if (task.isSuccessful()) {
+                    for (QueryDocumentSnapshot document : task.getResult()) {
+                        addToMediaList(document);
                     }
-                }
-                else{
+                } else {
                     Log.d(TAG, "onComplete: error getting documents: " + task.getException());
                 }
                 updateDataSet();
@@ -141,21 +165,22 @@ public class PlaylistFragment extends Fragment implements
         mMediaList.add(media);
     }
 
-    private void updateDataSet(){
+    private void updateDataSet() {
         mIMainActivity.hideProgressBar();
         mAdapter.notifyDataSetChanged();
-        if(mIMainActivity.getMyPreferenceManager().getLastPlayedArtist().equals(mSelectArtist.getArtist_id())){
+        if (mIMainActivity.getMyPreferenceManager().getLastPlayedArtist().equals(mSelectArtist.getArtist_id())) {
             getSelectedMediaItem(mIMainActivity.getMyPreferenceManager().getLastPlayedMedia());
         }
     }
 
-    private void initRecyclerView(View view){
+    private void initRecyclerView(View view) {
         mRecyclerView = view.findViewById(R.id.recycler_view);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         mAdapter = new PlaylistRecyclerAdapter(getActivity(), mMediaList, this);
         mRecyclerView.setAdapter(mAdapter);
 
-        if(mMediaList.size() == 0){
+
+        if (mMediaList.size() == 0) {
             retrieveMedia();
         }
     }
@@ -178,13 +203,13 @@ public class PlaylistFragment extends Fragment implements
         saveLastPlayedSongProperties();
     }
 
-    public void updateUI(MediaMetadataCompat mediaItem){
+    public void updateUI(MediaMetadataCompat mediaItem) {
         mAdapter.setSelectedIndex(mAdapter.getIndexOfItem(mediaItem));
         mSelectedMedia = mediaItem;
         saveLastPlayedSongProperties();
     }
 
-    private void saveLastPlayedSongProperties(){
+    private void saveLastPlayedSongProperties() {
         // Save some properties for next time the app opens
         // NOTE: Normally you'd do this with a cache
         mIMainActivity.getMyPreferenceManager().savePlaylistId(mSelectArtist.getArtist_id()); // playlist id is same as artist id

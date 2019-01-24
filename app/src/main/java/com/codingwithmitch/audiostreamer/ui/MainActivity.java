@@ -19,6 +19,7 @@ import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -68,6 +69,9 @@ public class MainActivity extends AppCompatActivity implements
     private UpdateUIBroadcastReceiver mUpdateUIBroadcastReceiver;
     private boolean mOnAppOpen;
     private boolean mWasConfigurationChange = false;
+
+
+
 
     /* CHECK NETWORK STATE */
     private BroadcastReceiver MyReceiver = null;
