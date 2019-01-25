@@ -36,6 +36,7 @@ public class MyApplication extends Application {
         mMediaItems.clear();
         for(MediaMetadataCompat item: mediaItems){
             Log.d(TAG, "setMediaItems: called: adding media item: " + item.getDescription());
+
             mMediaItems.add(
                     new MediaBrowserCompat.MediaItem(
                             item.getDescription(), MediaBrowserCompat.MediaItem.FLAG_PLAYABLE)

@@ -117,6 +117,7 @@ public class PlaylistFragment extends Fragment implements
             if (mediaItem.getDescription().getMediaId().equals(mediaId)) {
                 mSelectedMedia = mediaItem;
                 mAdapter.setSelectedIndex(mAdapter.getIndexOfItem(mSelectedMedia));
+
                 break;
             }
         }
@@ -195,17 +196,20 @@ public class PlaylistFragment extends Fragment implements
     public void onMediaSelected(int position) {
         mIMainActivity.getMyApplicationInstance().setMediaItems(mMediaList);
         mSelectedMedia = mMediaList.get(position);
+
         mAdapter.setSelectedIndex(position);
         mIMainActivity.onMediaSelected(
                 mSelectArtist.getArtist_id(), // playlist_id = artist_id
                 mMediaList.get(position),
                 position);
+        Log.d(TAG, "onMediaSelected: MEX " + mSelectedMedia.getDescription().getMediaUri());
         saveLastPlayedSongProperties();
     }
 
     public void updateUI(MediaMetadataCompat mediaItem) {
         mAdapter.setSelectedIndex(mAdapter.getIndexOfItem(mediaItem));
         mSelectedMedia = mediaItem;
+        Log.d(TAG, "onMediaSelected: MEXTHIS " + mSelectedMedia.getDescription().getMediaUri());
         saveLastPlayedSongProperties();
     }
 
