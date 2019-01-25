@@ -82,6 +82,8 @@ public class MainActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
+
         /* CHECK NETWORK STATE */
         MyReceiver = new MyReceiver();
 

@@ -1,7 +1,15 @@
 package com.codingwithmitch.audiostreamer.ui;
 
 
+import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.database.Cursor;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -18,6 +26,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.MediaController;
+import android.widget.Toast;
+import android.widget.VideoView;
 
 import com.codingwithmitch.audiostreamer.R;
 import com.codingwithmitch.audiostreamer.adapters.PlaylistRecyclerAdapter;
@@ -29,7 +41,10 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.io.IOException;
 import java.util.ArrayList;
+
+import static android.content.Context.DOWNLOAD_SERVICE;
 
 
 public class PlaylistFragment extends Fragment implements
@@ -41,6 +56,16 @@ public class PlaylistFragment extends Fragment implements
     private RecyclerView mRecyclerView;
 
 
+    /* MUSIC DOWNLOAD */
+
+    long queueId;
+    DownloadManager dm;
+    MediaPlayer mediaPlayer;
+
+
+    /* MUSIC DOWNLOAD */
+
+
     // Vars
     private PlaylistRecyclerAdapter mAdapter;
     private ArrayList<MediaMetadataCompat> mMediaList = new ArrayList<>();
@@ -48,6 +73,9 @@ public class PlaylistFragment extends Fragment implements
     private String mSelectedCategory;
     private Artist mSelectArtist;
     private MediaMetadataCompat mSelectedMedia;
+
+    Button downloadClick;
+    Button viewClick;
 
     /* SWIPE REFRESH LAYOUT */
 
@@ -94,6 +122,33 @@ public class PlaylistFragment extends Fragment implements
         if (savedInstanceState != null) {
             mAdapter.setSelectedIndex(savedInstanceState.getInt("selected_index"));
         }
+
+        downloadClick = view.findViewById(R.id.downloadClick);
+        viewClick = view.findViewById(R.id.viewClick);
+
+        downloadClick.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+
+
+                dm = (DownloadManager) getActivity().getSystemService(DOWNLOAD_SERVICE);
+                DownloadManager.Request request = new DownloadManager.Request(Uri.parse("http://feeds.soundcloud.com/stream/550150548-iu-dragon-summer-upbeat.mp3"));
+
+                queueId = dm.enqueue(request);
+            }
+        });
+
+        viewClick.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Intent i = new Intent();
+                i.setAction(DownloadManager.ACTION_VIEW_DOWNLOADS);
+                startActivity(i);
+
+            }
+        });
 
         /* SWIPE REFRESH LAYOUT */
 
@@ -228,19 +283,57 @@ public class PlaylistFragment extends Fragment implements
         super.onSaveInstanceState(outState);
         outState.putInt("selected_index", mAdapter.getSelectedIndex());
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        /* MUSIC */
+// your URL here
+        mediaPlayer = new MediaPlayer();
+        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        try {
+            mediaPlayer.setDataSource("http://feeds.soundcloud.com/stream/550150548-iu-dragon-summer-upbeat.mp3");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            mediaPlayer.prepare(); // might take long! (for buffering, etc)
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        /* MUSIC */
+
+        BroadcastReceiver receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+
+                if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(action)) {
+
+                    DownloadManager.Query req_query = new DownloadManager.Query();
+                    req_query.setFilterById(queueId);
+
+                    Cursor c = dm.query(req_query);
+                    if (c.moveToFirst()) {
+
+                        int columnIndex = c.getColumnIndex(DownloadManager.COLUMN_STATUS);
+
+                        if (DownloadManager.STATUS_SUCCESSFUL == c.getInt(columnIndex)){
+                            Toast.makeText(context, "SUCCESS", Toast.LENGTH_SHORT).show();
+
+                        }
+
+                    }
+
+
+                }
+
+            }
+        };
+
+        getActivity().registerReceiver(receiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
