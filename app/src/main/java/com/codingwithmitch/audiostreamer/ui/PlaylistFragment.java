@@ -106,22 +106,23 @@ public class PlaylistFragment extends Fragment implements
             mSelectArtist = getArguments().getParcelable("artist");
         }
         setRetainInstance(true);
+
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
+
         return inflater.inflate(R.layout.fragment_home, container, false);
+
+
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        initRecyclerView(view);
-        mIMainActivity.setActionBarTitle(mSelectArtist.getTitle());
 
-        if (savedInstanceState != null) {
-            mAdapter.setSelectedIndex(savedInstanceState.getInt("selected_index"));
-        }
+        /* CHANGES : CODE AT THE START, TO AVOID LAG */
 
         downloadClick = view.findViewById(R.id.downloadClick);
         viewClick = view.findViewById(R.id.viewClick);
@@ -133,7 +134,7 @@ public class PlaylistFragment extends Fragment implements
 
 
                 dm = (DownloadManager) getActivity().getSystemService(DOWNLOAD_SERVICE);
-                DownloadManager.Request request = new DownloadManager.Request(Uri.parse("http://feeds.soundcloud.com/stream/550150548-iu-dragon-summer-upbeat.mp3"));
+                DownloadManager.Request request = new DownloadManager.Request(mSelectedMedia.getDescription().getMediaUri());
 
                 queueId = dm.enqueue(request);
             }
@@ -149,6 +150,16 @@ public class PlaylistFragment extends Fragment implements
 
             }
         });
+
+        /* CHANGES : CODE AT THE START, TO AVOID LAG */
+
+        initRecyclerView(view);
+        mIMainActivity.setActionBarTitle(mSelectArtist.getTitle());
+
+        if (savedInstanceState != null) {
+            mAdapter.setSelectedIndex(savedInstanceState.getInt("selected_index"));
+        }
+
 
         /* SWIPE REFRESH LAYOUT */
 
@@ -287,24 +298,6 @@ public class PlaylistFragment extends Fragment implements
     @Override
     public void onResume() {
         super.onResume();
-
-        /* MUSIC */
-// your URL here
-        mediaPlayer = new MediaPlayer();
-        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        try {
-            mediaPlayer.setDataSource("http://feeds.soundcloud.com/stream/550150548-iu-dragon-summer-upbeat.mp3");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            mediaPlayer.prepare(); // might take long! (for buffering, etc)
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-
-        /* MUSIC */
 
         BroadcastReceiver receiver = new BroadcastReceiver() {
             @Override
