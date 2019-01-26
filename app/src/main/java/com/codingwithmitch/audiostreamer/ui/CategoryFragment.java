@@ -2,6 +2,7 @@ package com.codingwithmitch.audiostreamer.ui;
 
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -14,6 +15,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
 import com.codingwithmitch.audiostreamer.R;
 import com.codingwithmitch.audiostreamer.adapters.CategoryRecyclerAdapter;
@@ -34,14 +36,17 @@ public class CategoryFragment extends Fragment implements CategoryRecyclerAdapte
     private static final String TAG = "CategoryFragment";
 
 
+
     // UI Components
     private RecyclerView mRecyclerView;
+    Button retrieveClickButton;
 
     // Vars
     private CategoryRecyclerAdapter mAdapter;
     private ArrayList<Artist> mArtists = new ArrayList<>();
     private IMainActivity mIMainActivity;
     private String mSelectedCategory;
+
 
     /* SWIPE REFRESH LAYOUT */
 
@@ -83,6 +88,21 @@ public class CategoryFragment extends Fragment implements CategoryRecyclerAdapte
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         initRecyclerView(view);
         mIMainActivity.setActionBarTitle(mSelectedCategory);
+
+        /* RETRIEVE CLICK */
+
+        retrieveClickButton = view.findViewById(R.id.retrieveClick);
+        retrieveClickButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(getActivity(), RetrieveFilesActivity.class);
+                startActivity(i);
+            }
+        });
+
+        /* RETRIEVE CLICK */
+
+
         /* SWIPE REFRESH LAYOUT */
 
         mRefreshLayout = view.findViewById(R.id.swipe_refresh_layout);

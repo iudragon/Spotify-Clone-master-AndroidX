@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.codingwithmitch.audiostreamer">
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
 
     <application
         android:name=".MyApplication"
@@ -14,9 +14,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".ui.MainActivity"
-            android:windowSoftInputMode="adjustPan"
-            android:configChanges="orientation">
+        <activity
+            android:name=".ui.MainActivity"
+            android:configChanges="orientation"
+            android:windowSoftInputMode="adjustPan">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -25,24 +26,26 @@
         </activity>
         <activity android:name=".ui.MyIntro" />
 
-        <service
-            android:name=".services.MediaService">
+        <service android:name=".services.MediaService">
             <intent-filter>
-                <action android:name="android.media.browse.MediaBrowserService"/>
+                <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
 
         <receiver android:name="androidx.media.session.MediaButtonReceiver">
             <intent-filter>
-                <action android:name="android.intent.action.MEDIA_BUTTON"/>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
         </receiver>
-        <receiver android:name = ".ui.MyReceiver">
+        <receiver android:name=".ui.MyReceiver">
             <intent-filter>
-                <action android:name = "android.net.conn.CONNECTIVITY_CHANGE" />
-                <action android:name = "android.net.wifi.WIFI_STATE_CHANGED" />
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+                <action android:name="android.net.wifi.WIFI_STATE_CHANGED" />
             </intent-filter>
         </receiver>
+
+        <activity android:name=".ui.RetrieveFilesActivity" />
+        <activity android:name=".ui.PlayerActivity"></activity>
     </application>
 
 </manifest>
